@@ -1,0 +1,17 @@
+version: '3'
+
+volumes:
+  storage:
+
+services:
+  database:
+    image: postgres:latest
+    container_name: shortener_database
+    volumes:
+      - storage:/var/postgres/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: shortener
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
