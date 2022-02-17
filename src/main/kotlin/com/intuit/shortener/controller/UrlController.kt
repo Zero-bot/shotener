@@ -9,6 +9,8 @@ import com.intuit.shortener.utils.JsonWebTokenUtil
 import com.intuit.shortener.utils.UrlHashUtils
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.*
 import java.net.URI
@@ -32,8 +34,17 @@ class UrlController {
     lateinit var jsonWebTokenUtil: JsonWebTokenUtil
 
     @PostMapping("/domain")
-    fun addDomain(@RequestBody addDomainRequest: AddDomainRequest){
-        urlService.addDomain(addDomainRequest)
+    fun addDomain(@RequestBody addDomainRequest: AddDomainRequest): ResponseEntity<String> {
+
+        val currentUser = jsonWebTokenUtil.getCurrentUser(httpServletRequest)
+        log.info("Request for adding domain received from $currentUser: $addDomainRequest")
+        if(isValidUrl(addDomainRequest.domain).not()){
+            log.error("Not a valid domain: ${addDomainRequest.domain}")
+            return ResponseEntity.status(HttpStatus.OK).body("Not a valid URI")
+        }
+        val domain = Domains(username = currentUser, domain = addDomainRequest.domain)
+        urlService.addDomain(domain)
+        return ResponseEntity.status(HttpStatus.OK).body("URL added successfully")
     }
 
     @GetMapping("/domain/{username}")
@@ -42,14 +53,13 @@ class UrlController {
     }
 
     @PostMapping("/shorten")
-    fun shorten(@RequestBody urlShortenerRequest: UrlShortenerRequest): String{
+    fun shorten(@RequestBody urlShortenerRequest: UrlShortenerRequest): ResponseEntity<String>{
         val currentUser = jsonWebTokenUtil.getCurrentUser(httpServletRequest)
-        log.info("currentUser: $currentUser")
-        val uri: URI?
-        try {
-            uri = URI(urlShortenerRequest.url)
-        }catch (ex: URISyntaxException){
-            return "Not a valid URL"
+        log.info("Request for adding domain received from $currentUser: $urlShortenerRequest")
+        val uri = URI(urlShortenerRequest.url)
+
+        if(isValidUrl(urlShortenerRequest.url).not()) {
+            return ResponseEntity.status(HttpStatus.OK).body("Not a valid URI")
         }
 
         val allowedDomains = urlService.getDomain(currentUser).filter {
@@ -63,9 +73,10 @@ class UrlController {
             log.info("After: $urlObj")
             val hash = UrlHashUtils.idToShortUrl(urlObj.id)
             urlService.addHash(urlObj.id, hash)
-            return "http://localhost:8080/s/$hash"
+            return ResponseEntity.status(HttpStatus.OK).body("http://localhost:8080/s/$hash")
         }
-        return "Domain not whitelisted"
+        log.error("Domain or subdomains of ${urlShortenerRequest.url} is not whitelisted")
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Domain not whitelisted")
     }
 
     fun checkDomainMatches(first: String, next: String): Boolean {
@@ -75,7 +86,7 @@ class UrlController {
         val firstSplited = firstHost.split('.').reversed()
         val secondSplited = secondHost.split('.').reversed()
         var matches = 0
-        secondSplited.forEachIndexed() { index: Int, domain: String ->
+        secondSplited.forEachIndexed { index: Int, domain: String ->
             if(firstSplited[index] == domain)
                 matches+=1
             else
@@ -83,5 +94,14 @@ class UrlController {
         }
         return matches >=2
 
+    }
+
+    fun isValidUrl(url: String): Boolean {
+        return try {
+            val uri = URI(url)
+            return (uri.scheme.lowercase() in listOf("https", "http")) && (uri.query.length + uri.path.length < 2000)
+        }catch (ex: URISyntaxException){
+            false
+        }
     }
 }

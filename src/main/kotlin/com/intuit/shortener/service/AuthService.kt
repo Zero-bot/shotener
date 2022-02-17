@@ -20,7 +20,6 @@ class AuthService {
 
 
     fun authenticate(loginRequest: LoginRequest): Boolean {
-        logger.info(loginRequest.toString())
         val currentUser = userDao.get(loginRequest.username) ?: return false
         return BCryptPasswordEncoder().matches(loginRequest.password, currentUser.password)
     }

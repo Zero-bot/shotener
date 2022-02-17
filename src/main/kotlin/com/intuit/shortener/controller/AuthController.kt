@@ -32,7 +32,10 @@ class AuthController {
     fun authenticate(@RequestBody loginRequest: LoginRequest): ResponseEntity<String> {
         return when(authService.authenticate(loginRequest)){
             true -> ResponseEntity<String>(jsonWebTokenUtil.createToken(loginRequest.username), HttpStatus.OK)
-            false -> ResponseEntity<String>("Invalid credentials", HttpStatus.UNAUTHORIZED)
+            false -> {
+                logger.error("Invalid credentials supplied for ${loginRequest.username}")
+                ResponseEntity<String>("Invalid credentials", HttpStatus.UNAUTHORIZED)
+            }
         }
     }
 }

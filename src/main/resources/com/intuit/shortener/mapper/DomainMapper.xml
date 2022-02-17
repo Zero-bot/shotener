@@ -8,7 +8,7 @@
         <result property="domain" column="allowed_domain"/>
     </resultMap>
 
-    <insert id="add" parameterType="com.intuit.shortener.domain.AddDomainRequest">
+    <insert id="add" parameterType="com.intuit.shortener.domain.Domains">
         INSERT INTO public."allowed_domains"(username, allowed_domain) VALUES (#{username}, #{domain});
     </insert>
 

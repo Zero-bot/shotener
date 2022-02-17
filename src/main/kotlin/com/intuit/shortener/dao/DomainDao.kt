@@ -4,6 +4,6 @@ import com.intuit.shortener.domain.AddDomainRequest
 import com.intuit.shortener.domain.Domains
 
 interface DomainDao {
-    fun add( addDomainRequest: AddDomainRequest)
+    fun add( domain: Domains)
     fun get(username: String): List<Domains>
 }

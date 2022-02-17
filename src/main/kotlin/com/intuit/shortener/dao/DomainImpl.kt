@@ -1,6 +1,5 @@
 package com.intuit.shortener.dao
 
-import com.intuit.shortener.domain.AddDomainRequest
 import com.intuit.shortener.domain.Domains
 import com.intuit.shortener.mapper.DomainMapper
 import org.slf4j.LoggerFactory
@@ -14,9 +13,9 @@ class DomainImpl: DomainDao {
     @Autowired
     lateinit var domainMapper: DomainMapper
 
-    override fun add(addDomainRequest: AddDomainRequest) {
-        log.info("Adding domain $addDomainRequest")
-        domainMapper.add(addDomainRequest)
+    override fun add(domain: Domains) {
+        log.info("Adding domain $domain")
+        domainMapper.add(domain)
     }
 
     override fun get(username: String): List<Domains> {
