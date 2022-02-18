@@ -63,7 +63,8 @@ class UrlController {
         }
 
         val allowedDomains = urlService.getDomain(currentUser).filter {
-            uri.host.equals(it) || checkDomainMatches(uri.host, it.domain)
+            log.info("Comparing: ${uri.host} and ${it.domain}")
+            uri.host.equals(it) || checkDomainMatches(uri.host, URI(it.domain).host)
         }
 
         if(allowedDomains.isNotEmpty()) {
@@ -99,7 +100,17 @@ class UrlController {
     fun isValidUrl(url: String): Boolean {
         return try {
             val uri = URI(url)
-            return (uri.scheme.lowercase() in listOf("https", "http")) && (uri.query.length + uri.path.length < 2000)
+
+            log.info("Scheme: ${uri.scheme}, Path: ${uri.path}, Query: ${uri.query}")
+
+            if (uri.scheme == null) return false
+
+            var length = uri.path.length
+            if (uri.query != null) {
+                length += uri.query.length
+            }
+
+            return (uri.scheme.lowercase() in listOf("https", "http")) && (length < 2000)
         }catch (ex: URISyntaxException){
             false
         }
